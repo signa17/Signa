@@ -22,6 +22,7 @@
     background: var(--bg); color: var(--text);
     font-family: -apple-system, "Segoe UI", Roboto, Verdana, sans-serif;
     -webkit-tap-highlight-color: transparent;
+    text-transform: uppercase;
   }
   button { font-family: inherit; }
 
@@ -74,13 +75,13 @@
   #main-split { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
   #left-panel {
-    height: 46%; flex-shrink: 0;
+    height: 42%; flex-shrink: 0;
     overflow-y: auto;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-    padding: 12px 12px 14px;
+    padding: 10px 8px 10px;
   }
-  #left-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  #left-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .empty-left {
     color: var(--text-dim); font-size: 0.82rem; text-align: center;
     border: 2px dashed var(--border); border-radius: var(--radius-lg);
@@ -107,7 +108,7 @@
   .video-status[hidden] { display: none; }
 
   .picto-frame {
-    position: relative; width: 100%; height: 40px; margin-top: 5px;
+    position: relative; width: 100%; height: 36px; margin-top: 4px;
     background: var(--tile-tint, #eee);
     border-radius: 10px; overflow: hidden;
     display: flex; align-items: center; justify-content: center;
@@ -135,9 +136,9 @@
   }
   .back-btn:active { transform: scale(0.93); }
 
-  main { padding: 10px 12px 24px; }
+  main { padding: 10px 12px 14px; }
 
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; }
   .tile {
     border: none; padding: 0; cursor: pointer; overflow: hidden;
     border-radius: var(--radius-tile);
@@ -165,7 +166,7 @@
   @keyframes pulse { 0%,100%{opacity:0.3;} 50%{opacity:1;} }
   .tile-error { color: var(--err); font-size: 0.65rem; text-align: center; padding: 4px; }
 
-  .tile-label { background: var(--surface); padding: 6px 4px; text-align: center; font-weight: 700; font-size: 0.8rem; color: var(--text); }
+  .tile-label { background: var(--surface); padding: 5px 4px; text-align: center; font-weight: 700; font-size: 0.7rem; color: var(--text); overflow-wrap: break-word; line-height: 1.15; }
 
   @media (prefers-reduced-motion: reduce) {
     .tile, .loading-dot, .combo-card.active .video-frame, .combo-card.active .picto-frame { animation: none !important; transition: none !important; }
