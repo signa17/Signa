@@ -69,6 +69,7 @@
     border-radius: 999px; padding: 3px 10px 3px 3px; cursor: pointer;
   }
   .chip img { width: 22px; height: 22px; object-fit: contain; border-radius: 50%; background: #fff; }
+  .icon-btn, .chip, .tile { text-transform: uppercase; }
   .chip span { font-size: 0.8rem; font-weight: 700; white-space: nowrap; }
 
   /* ---------- divisió en dues franges: vídeos a dalt, selecció a sota ---------- */
@@ -386,7 +387,13 @@
     statusEl.hidden = false; statusEl.className = "video-status";
     statusEl.innerHTML = `<div class="loading-dot"></div><span>Carregant…</span>`;
     videoEl.style.display = "none";
-    const tryPlay = () => { statusEl.hidden = true; videoEl.style.display = "block"; videoEl.play().catch(() => {}); };
+    let started = false;
+    const tryPlay = () => {
+      statusEl.hidden = true; videoEl.style.display = "block";
+      if (started) return; // ja s'ha reproduït: no tornar a cridar play() encara que l'esdeveniment torni a saltar
+      started = true;
+      videoEl.play().catch(() => {});
+    };
     videoEl.addEventListener("loadeddata", tryPlay);
     videoEl.addEventListener("canplay", tryPlay);
     videoEl.addEventListener("playing", tryPlay);
@@ -395,7 +402,6 @@
       statusEl.innerHTML = `✕<br>No disponible`;
     });
     videoEl.src = src;
-    videoEl.play().catch(() => {});
   }
 
   function buildComboCard(word, idx) {
