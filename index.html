@@ -69,7 +69,7 @@
     border-radius: 999px; padding: 3px 10px 3px 3px; cursor: pointer;
   }
   .chip img { width: 22px; height: 22px; object-fit: contain; border-radius: 50%; background: #fff; }
-  .icon-btn, .chip, .tile { text-transform: uppercase; }
+  .chip-abc { width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
   .chip span { font-size: 0.8rem; font-weight: 700; white-space: nowrap; }
 
   /* ---------- divisió en dues franges: vídeos a dalt, selecció a sota ---------- */
@@ -168,6 +168,38 @@
   .tile-error { color: var(--err); font-size: 0.65rem; text-align: center; padding: 4px; }
 
   .tile-label { background: var(--surface); padding: 5px 4px; text-align: center; font-weight: 700; font-size: 0.7rem; color: var(--text); overflow-wrap: break-word; line-height: 1.15; }
+
+  /* ---------- TECLAT: botó d'entrada, pantalla del teclat i paraules escrites ---------- */
+  .icon-btn, .chip, .tile, .teclat-btn { text-transform: uppercase; }
+  .teclat-btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; margin-top: 12px; padding: 13px;
+    background: #EEF1F4; color: #4A5568; border: 2px solid #B9C2CE; border-radius: var(--radius-tile);
+    font-size: 0.95rem; font-weight: 800; cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  }
+  .teclat-btn:active { transform: scale(0.97); }
+  .teclat-icon { font-size: 1.2rem; }
+
+  #teclat-preview {
+    display: flex; align-items: center; gap: 8px;
+    margin: 10px 12px; padding: 6px 6px 6px 14px;
+    background: #F0F1F3; border-radius: 13px;
+  }
+  #teclat-text { flex: 1; min-width: 0; font-weight: 800; font-size: 1rem; color: var(--text); letter-spacing: 2px; overflow-wrap: break-word; }
+  #teclat-text.teclat-text-empty { color: var(--text-dim); font-weight: 600; letter-spacing: normal; font-size: 0.85rem; }
+  #teclat-ok { background: #2D6CDF; color: white; }
+  #teclat-back { background: var(--surface); color: var(--text); }
+
+  .letters-grid { grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 8px; }
+  .letter-icon-area { display: flex; align-items: center; justify-content: center; }
+  .letter-char { font-size: 1.5rem; font-weight: 800; color: var(--text); }
+  .space-tile { grid-column: span 3; }
+  .space-tile .tile-icon-area { aspect-ratio: 3 / 1; }
+  .space-tile .letter-char { font-size: 0.8rem; letter-spacing: 1px; }
+
+  .video-frame.text-word { display: flex; align-items: center; justify-content: center; padding: 6px; }
+  .video-frame.text-word span { font-size: 1.6rem; font-weight: 800; color: var(--tile-color, var(--text)); text-align: center; word-break: break-word; line-height: 1.15; }
 
   @media (prefers-reduced-motion: reduce) {
     .tile, .loading-dot, .combo-card.active .video-frame, .combo-card.active .picto-frame { animation: none !important; transition: none !important; }
@@ -302,6 +334,9 @@
   let currentTint = null;
   let loadResults = {};
   let phrase = []; // { id, label, image, video, color, tint }
+  let keyboardMode = false;
+  let typedBuffer = "";
+  const CATALAN_LETTERS = ["A","B","C","Ç","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z"];
 
   // ---------- veu ----------
   function speak(text) {
@@ -357,7 +392,9 @@
         const chip = document.createElement("button");
         chip.className = "chip";
         chip.style.setProperty("--chip-color", w.color);
-        chip.innerHTML = `<img src="${w.image}" alt="" /><span>${w.label}</span>`;
+        chip.innerHTML = w.image
+          ? `<img src="${w.image}" alt="" /><span>${w.label}</span>`
+          : `<span class="chip-abc" aria-hidden="true">✎</span><span>${w.label}</span>`;
         chip.addEventListener("click", () => replayWord(idx));
         sentenceStrip.appendChild(chip);
       });
@@ -376,6 +413,8 @@
     navStack = [];
     currentColor = null;
     currentTint = null;
+    keyboardMode = false;
+    typedBuffer = "";
     phrase = [];
     renderSentenceStrip();
     renderLeftPanel();
@@ -408,19 +447,28 @@
     const card = document.createElement("div");
     card.className = "combo-card";
     card.id = `combo-card-${idx}`;
-    card.innerHTML = `
-      <div class="video-frame" style="--tile-tint:${word.tint}; --tile-color:${word.color}">
-        <video muted playsinline webkit-playsinline="true"></video>
-        <div class="video-status" hidden></div>
-      </div>
-      <div class="picto-frame" style="--tile-tint:${word.tint}; --tile-color:${word.color}">
-        <img src="${word.image}" alt="" />
-      </div>
-      <div class="combo-word" style="--tile-color:${word.color}">${word.label}</div>
-    `;
-    const videoEl = card.querySelector("video");
-    const statusEl = card.querySelector(".video-status");
-    setupVideoElement(videoEl, statusEl, word.video);
+    if (word.video) {
+      card.innerHTML = `
+        <div class="video-frame" style="--tile-tint:${word.tint}; --tile-color:${word.color}">
+          <video muted playsinline webkit-playsinline="true"></video>
+          <div class="video-status" hidden></div>
+        </div>
+        <div class="picto-frame" style="--tile-tint:${word.tint}; --tile-color:${word.color}">
+          <img src="${word.image}" alt="" />
+        </div>
+        <div class="combo-word" style="--tile-color:${word.color}">${word.label}</div>
+      `;
+      const videoEl = card.querySelector("video");
+      const statusEl = card.querySelector(".video-status");
+      setupVideoElement(videoEl, statusEl, word.video);
+    } else {
+      // paraula escrita amb el TECLAT: no hi ha vídeo ni picto, es mostra el text
+      card.innerHTML = `
+        <div class="video-frame text-word" style="--tile-tint:${word.tint}; --tile-color:${word.color}">
+          <span>${word.label}</span>
+        </div>
+      `;
+    }
     card.addEventListener("click", () => replayWord(idx));
     return card;
   }
@@ -481,6 +529,111 @@
     speak(node.label);
   }
 
+  // ---------- TECLAT: escriure paraules lletra a lletra ----------
+  function openKeyboard() {
+    keyboardMode = true;
+    typedBuffer = "";
+    renderLevel();
+  }
+  function closeKeyboard() {
+    keyboardMode = false;
+    renderLevel();
+  }
+  function updateTeclatPreview() {
+    const el = document.getElementById("teclat-text");
+    if (!el) return;
+    if (typedBuffer) { el.textContent = typedBuffer; el.classList.remove("teclat-text-empty"); }
+    else { el.textContent = "Escriu una paraula…"; el.classList.add("teclat-text-empty"); }
+    const okBtn = document.getElementById("teclat-ok");
+    const backBtn = document.getElementById("teclat-back");
+    if (okBtn) okBtn.disabled = typedBuffer.length === 0;
+    if (backBtn) backBtn.disabled = typedBuffer.length === 0;
+  }
+  function normalizeWord(s) {
+    return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  }
+  function findPictogramByLabel(text) {
+    const target = normalizeWord(text);
+    function search(nodes, color, tint) {
+      for (const node of nodes) {
+        const useColor = node.color || color;
+        const useTint = node.tint || tint;
+        if (node.video && normalizeWord(node.label) === target) {
+          return { node, color: useColor, tint: useTint };
+        }
+        if (node.children) {
+          const found = search(node.children, useColor, useTint);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+    return search(CATEGORIES, null, null);
+  }
+  function confirmTypedWord() {
+    const text = typedBuffer.trim();
+    if (!text) return;
+    const match = findPictogramByLabel(text);
+    const displayLabel = match ? match.node.label : text; // si coincideix, mostrem l'ortografia correcta (amb accents)
+    const wordObj = {
+      id: "txt-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+      label: displayLabel, image: null, video: null,
+      color: "#4A5568", tint: "#EEF1F4",
+    };
+    phrase.push(wordObj);
+    renderSentenceStrip();
+    appendLeftCard(wordObj);
+    speak(displayLabel);
+    typedBuffer = "";
+    updateTeclatPreview();
+  }
+  function renderKeyboardScreen() {
+    view.innerHTML = `
+      <div class="level-nav">
+        <button class="back-btn" id="back-btn" aria-label="Enrere, torna a l'inici">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F2530" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+      </div>
+      <div id="teclat-preview">
+        <span id="teclat-text" class="teclat-text-empty">Escriu una paraula…</span>
+        <button class="icon-btn" id="teclat-back" aria-label="Esborra l'última lletra">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/><path d="M13 9l6 6M19 9l-6 6"/></svg>
+        </button>
+        <button class="icon-btn" id="teclat-ok" aria-label="Afegeix la paraula a la frase">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>
+        </button>
+      </div>
+      <main><div class="grid letters-grid" id="letters-grid"></div></main>
+    `;
+    document.getElementById("back-btn").addEventListener("click", closeKeyboard);
+    document.getElementById("teclat-back").addEventListener("click", () => {
+      typedBuffer = typedBuffer.slice(0, -1);
+      updateTeclatPreview();
+    });
+    document.getElementById("teclat-ok").addEventListener("click", confirmTypedWord);
+    const grid = document.getElementById("letters-grid");
+    CATALAN_LETTERS.forEach((letter) => {
+      const btn = document.createElement("button");
+      btn.className = "tile letter-tile";
+      btn.innerHTML = `<div class="tile-icon-area letter-icon-area" style="--tile-tint:#E4E6E9"><span class="letter-char">${letter}</span></div>`;
+      btn.addEventListener("click", () => {
+        typedBuffer += letter;
+        speak(letter);
+        updateTeclatPreview();
+      });
+      grid.appendChild(btn);
+    });
+    const spaceBtn = document.createElement("button");
+    spaceBtn.className = "tile letter-tile space-tile";
+    spaceBtn.innerHTML = `<div class="tile-icon-area letter-icon-area" style="--tile-tint:#E4E6E9"><span class="letter-char">ESPAI</span></div>`;
+    spaceBtn.addEventListener("click", () => {
+      typedBuffer += " ";
+      updateTeclatPreview();
+    });
+    grid.appendChild(spaceBtn);
+    updateTeclatPreview();
+  }
+
   // ---------- panell dret: navegació per nivells ----------
   function isInPhrase(id) { return phrase.some((w) => w.id === id); }
 
@@ -515,13 +668,14 @@
   }
 
   function renderLevel() {
+    if (keyboardMode) { renderKeyboardScreen(); return; }
     const nodes = currentChildren();
     const atHome = navStack.length === 0;
     const parent = atHome ? null : navStack[navStack.length - 1];
     const visibleNodes = atHome ? nodes : nodes.filter((n) => !isInPhrase(n.id));
 
     view.innerHTML = atHome
-      ? `<main><div class="grid" id="grid"></div></main>`
+      ? `<main><div class="grid" id="grid"></div><button class="teclat-btn" id="teclat-btn"><span class="teclat-icon" aria-hidden="true">⌨</span> Teclat</button></main>`
       : `<div class="level-nav">
            <button class="back-btn" id="back-btn" aria-label="Enrere, torna a ${parent.label}">
              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F2530" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
@@ -530,6 +684,7 @@
          <main>${visibleNodes.length === 0 ? `<div class="empty-left" style="margin-top:16px;">No hi ha més paraules aquí</div>` : `<div class="grid" id="grid"></div>`}</main>`;
 
     if (!atHome) document.getElementById("back-btn").addEventListener("click", goBackOneLevel);
+    if (atHome) document.getElementById("teclat-btn").addEventListener("click", openKeyboard);
 
     if (visibleNodes.length > 0) {
       const grid = document.getElementById("grid");
