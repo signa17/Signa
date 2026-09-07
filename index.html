@@ -473,6 +473,7 @@
   }
 
   function selectWord(node, ctx) {
+    if (isInPhrase(node.id)) return; // ja hi és: no duplicar
     const enriched = { ...node, color: ctx.color, tint: ctx.tint };
     phrase.push(enriched);
     renderSentenceStrip();
@@ -538,7 +539,7 @@
         const hasChildren = !!(node.children && node.children.length > 0);
         const onClick = atHome
           ? () => openNode(node)
-          : () => { selectWord(node, { color, tint }); if (hasChildren) openNode(node); };
+          : () => { selectWord(node, { color, tint }); if (hasChildren) openNode(node); else renderLevel(); };
         grid.appendChild(buildTile({
           color, tint,
           label: atHome ? node.label.toUpperCase() : node.label,
