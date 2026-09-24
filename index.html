@@ -203,7 +203,7 @@
     cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.08);
     transition: transform 0.1s ease;
   }
-  .qwerty-key:active { transform: scale(0.9); background: #D5D9DE; }
+  .qwerty-key:active, .qwerty-key.key-flash { transform: scale(0.9); background: #E5484D; color: #fff; }
   .qwerty-space-row { display: flex; margin-top: 10px; }
   .qwerty-space {
     flex: 1; padding: 18px; background: #E4E6E9; border: none; border-radius: 12px;
@@ -719,11 +719,24 @@
       typedBuffer += letter;
       speak(letter);
       updateTeclatPreview();
+      flashKey(letter);
     }
   }
   function focusHiddenInput() {
     const el = document.getElementById("teclat-hidden-input");
     if (el) el.focus({ preventScroll: true });
+  }
+  // il·lumina de vermell la tecla polsada (tàctil o física) com a confirmació visual
+  function flashKeyEl(btn) {
+    if (!btn) return;
+    btn.classList.add("key-flash");
+    setTimeout(() => btn.classList.remove("key-flash"), 200);
+  }
+  function flashKey(letter) {
+    const grid = document.getElementById("letters-grid");
+    if (!grid) return;
+    const btn = Array.from(grid.querySelectorAll(".qwerty-key")).find((b) => b.textContent === letter);
+    flashKeyEl(btn);
   }
   function renderKeyboardScreen() {
     view.innerHTML = `
@@ -772,6 +785,7 @@
           speak(letter);
           updateTeclatPreview();
           focusHiddenInput();
+          flashKeyEl(btn);
         });
         rowEl.appendChild(btn);
       });
